@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import logging
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -14,16 +14,17 @@ logger = logging.getLogger(__name__)
 # ---------------------------
 # Streamlit Page Config
 # ---------------------------
-st.set_page_config(page_title="Jagadish ChatBot", layout="centered")
+st.set_page_config(page_title="Jagadish ChatBot (Gemini)", layout="centered")
 st.title("🧠 Jagadish ChatBot")
 
 # ---------------------------
 # Read API Key from Environment
 # ---------------------------
-api_key = os.getenv("OPENAI_API_KEY")
+# Gemini looks for GOOGLE_API_KEY by default
+api_key = os.getenv("GOOGLE_API_KEY")
 
 if not api_key:
-    st.error("OPENAI_API_KEY not found in environment variables.")
+    st.error("GOOGLE_API_KEY not found in environment variables.")
     st.stop()
 
 # ---------------------------
@@ -31,27 +32,25 @@ if not api_key:
 # ---------------------------
 st.sidebar.title("⚙️ Settings")
 temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.7)
-max_tokens = st.sidebar.slider("Max Tokens", 50, 500, 200)
+# Gemini usually allows up to 2048 or more, 500 is safe for testing
+max_tokens = st.sidebar.slider("Max Tokens", 50, 2048, 500)
 model_name = st.sidebar.selectbox(
     "Select Model",
-    ["gpt-4o-mini", "gpt-4o"]
+    ["gemini-1.5-flash", "gemini-1.5-pro"]
 )
 
 # ---------------------------
 # Prompt Template
 # ---------------------------
+# Note: Gemini works best with a Human message; 
+# simple system-human pairings work well in LCEL
 prompt = ChatPromptTemplate.from_messages([
-    (
-        "system",
-        "You are a professional AI assistant. "
-        "Provide accurate, concise, and structured responses. "
-        "If you do not know something, clearly say so."
-    ),
-    ("user", "Question: {question}")
+    ("system", "You are a helpful and professional AI assistant named Jagadish ChatBot."),
+    ("human", "{question}")
 ])
 
 # ---------------------------
-# Initialize Chat History
+# Session State for History
 # ---------------------------
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -61,11 +60,12 @@ if "chat_history" not in st.session_state:
 # ---------------------------
 def generate_response(question: str) -> str:
     try:
-        chat_model = ChatOpenAI(
-            api_key=api_key,
+        # Initializing Gemini Chat Model
+        chat_model = ChatGoogleGenerativeAI(
             model=model_name,
+            google_api_key=api_key,
             temperature=temperature,
-            max_tokens=max_tokens
+            max_output_tokens=max_tokens
         )
 
         parser = StrOutputParser()
@@ -74,9 +74,6 @@ def generate_response(question: str) -> str:
 
         return response
 
-    # except Exception as e:
-    #     logger.error(f"Error generating response: {e}")
-    #     return "An error occurred while generating response."
     except Exception as e:
         logger.error(f"Error generating response: {e}")
         return f"REAL ERROR: {str(e)}"
@@ -99,8 +96,6 @@ if user_input:
 # ---------------------------
 # Display Chat History
 # ---------------------------
-for role, message in st.session_state.chat_history:
-    if role == "User":
-        st.markdown(f"**🧑 You:** {message}")
-    else:
-        st.markdown(f"**🧠 Bot:** {message}")
+for role, text in st.session_state.chat_history:
+    with st.chat_message(role.lower()):
+        st.write(text)
