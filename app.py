@@ -14,38 +14,41 @@ logger = logging.getLogger(__name__)
 # ---------------------------
 # Streamlit Page Config
 # ---------------------------
-st.set_page_config(page_title="Jagadish ChatBot (Gemini)", layout="centered")
-st.title("🧠 Jagadish ChatBot")
+st.set_page_config(page_title="Jagadish ChatBot", layout="centered")
+st.title("🧠 Jagadish ChatBot (Gemini Edition)")
 
 # ---------------------------
 # Read API Key from Environment
 # ---------------------------
-# Gemini looks for GOOGLE_API_KEY by default
+# Note: Gemini uses GOOGLE_API_KEY by default
 api_key = os.getenv("GOOGLE_API_KEY")
 
 if not api_key:
-    st.error("GOOGLE_API_KEY not found in environment variables.")
+    st.error("GOOGLE_API_KEY not found. Please check your Jenkins environment variables.")
     st.stop()
 
 # ---------------------------
 # Sidebar Settings
 # ---------------------------
-st.sidebar.title("⚙️ Settings")
-temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.7)
-# Gemini usually allows up to 2048 or more, 500 is safe for testing
-max_tokens = st.sidebar.slider("Max Tokens", 50, 2048, 500)
+st.sidebar.title("⚙️ Model Settings")
+st.sidebar.info("Adjust the AI's behavior here.")
+
 model_name = st.sidebar.selectbox(
-    "Select Model",
+    "Select Gemini Model",
     ["gemini-1.5-flash", "gemini-1.5-pro"]
 )
+
+temperature = st.sidebar.slider("Creativity (Temperature)", 0.0, 1.0, 0.7)
+max_tokens = st.sidebar.slider("Max Response Length", 50, 2048, 500)
+
+st.sidebar.divider()
+st.sidebar.write("🚀 **Status:** Online")
 
 # ---------------------------
 # Prompt Template
 # ---------------------------
-# Note: Gemini works best with a Human message; 
-# simple system-human pairings work well in LCEL
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful and professional AI assistant named Jagadish ChatBot."),
+    ("system", "You are a helpful AI assistant named Jagadish ChatBot."),
     ("human", "{question}")
 ])
 
@@ -60,7 +63,7 @@ if "chat_history" not in st.session_state:
 # ---------------------------
 def generate_response(question: str) -> str:
     try:
-        # Initializing Gemini Chat Model
+        # Initialize Gemini model
         chat_model = ChatGoogleGenerativeAI(
             model=model_name,
             google_api_key=api_key,
@@ -75,27 +78,22 @@ def generate_response(question: str) -> str:
         return response
 
     except Exception as e:
-        logger.error(f"Error generating response: {e}")
-        return f"REAL ERROR: {str(e)}"
+        logger.error(f"Error: {e}")
+        return f"Error: {str(e)}"
 
 # ---------------------------
-# User Input Section
+# UI Layout
 # ---------------------------
-user_input = st.text_input("Ask your question:")
+user_input = st.chat_input("Ask me anything...")
 
 if user_input:
-    # Store user message
-    st.session_state.chat_history.append(("User", user_input))
-
     # Generate bot response
     answer = generate_response(user_input)
-
-    # Store bot message
+    # Store and display history
+    st.session_state.chat_history.append(("User", user_input))
     st.session_state.chat_history.append(("Bot", answer))
 
-# ---------------------------
 # Display Chat History
-# ---------------------------
 for role, text in st.session_state.chat_history:
     with st.chat_message(role.lower()):
         st.write(text)
