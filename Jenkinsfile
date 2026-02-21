@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'docker-server' }
+    agent { label 'docker-node' }
 
     environment {
         DOCKER_IMAGE = "jagadish0716/chat-bot"
