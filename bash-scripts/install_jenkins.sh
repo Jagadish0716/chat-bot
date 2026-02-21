@@ -10,7 +10,6 @@
 #   - Adds official Jenkins repository
 #   - Installs and starts Jenkins service
 #   - Enables Jenkins to start at boot
-#   - Opens firewall port 8080
 # ------------------------------------------------------------------
 
 # Exit immediately if any command fails
@@ -93,15 +92,6 @@ sudo systemctl enable jenkins
 # Check whether Jenkins service is active
 echo "Checking Jenkins service status..."
 sudo systemctl is-active jenkins
-
-
-# ---------------------------------
-# Step 9: Configure Firewall
-# ---------------------------------
-# Allow incoming traffic on Jenkins default port 8080
-# (Only needed if UFW firewall is enabled)
-echo "Opening port 8080 in firewall..."
-sudo ufw allow 8080 || true
 
 
 # ------------------------------
