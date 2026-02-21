@@ -49,12 +49,14 @@ pipeline {
 
         stage('Run Docker Container') {
             steps {
-                sh '''
+                withCredentials([string(credentialsId: 'openai-api-key', variable: 'OPENAI_API_KEY')]) {
+                    sh '''
                     docker run -d \
-                    --name $CONTAINER_NAME \
                     -p 8501:8501 \
-                    $DOCKER_IMAGE:v1
-                '''
+                    -e OPENAI_API_KEY=$OPENAI_API_KEY \
+                    jagadish1607/chat-bot:v1
+                    '''
+                }
             }
         }
     }
