@@ -2,7 +2,7 @@ pipeline {
     agent { label 'docker-node' }
 
     environment {
-        DOCKER_IMAGE = "jagadish0716/chat-bot"
+        DOCKER_IMAGE = "jagadish1607/chat-bot"
         CONTAINER_NAME = "chatbot-container"
     }
 
