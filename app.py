@@ -74,9 +74,12 @@ def generate_response(question: str) -> str:
 
         return response
 
+    # except Exception as e:
+    #     logger.error(f"Error generating response: {e}")
+    #     return "An error occurred while generating response."
     except Exception as e:
         logger.error(f"Error generating response: {e}")
-        return "An error occurred while generating response."
+        return f"REAL ERROR: {str(e)}"
 
 # ---------------------------
 # User Input Section
