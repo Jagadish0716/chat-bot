@@ -52,6 +52,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'openai-api-key', variable: 'OPENAI_API_KEY')]) {
                     sh '''
                     docker run -d \
+                    --name $CONTAINER_NAME \
                     -p 8501:8501 \
                     -e OPENAI_API_KEY=$OPENAI_API_KEY \
                     jagadish1607/chat-bot:v1
