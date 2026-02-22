@@ -1,0 +1,6 @@
+# Caddyfile for HTTPS reverse proxy
+# This will automatically get a certificate for the domain
+
+www.jagadish-devopsified.online {
+    reverse_proxy localhost:8501
+}

@@ -2,44 +2,47 @@
 FROM python:3.10-slim
 
 LABEL maintainer="Jagadish V" \
-      version="1.0" \
-      created="2026-02-21" \
-      description="Streamlit Chat-bot application"
+      version="1.2" \
+      description="Streamlit Chat-bot with Automatic HTTPS via Caddy"
 
-# Set Working Directory
 WORKDIR /app
 
-
 # --------------------------------------------------
-# Install System Dependencies
+# Install System Dependencies & Caddy
 # --------------------------------------------------
-# build-essential  -> Required for compiling some Python packages
-# libgl1           -> Required for OpenCV and image processing
-# libglib2.0-0     -> Required by many ML libraries
-# Remove apt cache to reduce image size
 RUN apt update && apt install -y \
     build-essential \
+    curl \
+    debian-keyring \
+    debian-archive-keyring \
+    apt-transport-https \
     libgl1 \
-    libglib2.0-0 && \
-    rm -rf /var/lib/apt/lists/*
+    libglib2.0-0 \
+    supervisor \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
+    && apt update && apt install caddy -y \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy Requirements File First (Better Caching)
+# --------------------------------------------------
+# Python Setup
+# --------------------------------------------------
 COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Upgrade pip & Install Python Dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
-# Copies everything from current directory to container
 COPY . .
 
-# Expose Application Port
-# Streamlit runs on port 8501 by default
-EXPOSE 8501
+# Expose ports for Caddy (HTTP/HTTPS)
+EXPOSE 80
+EXPOSE 443
 
 # --------------------------------------------------
-# Run Streamlit Application
+# Process Management (Supervisord)
 # --------------------------------------------------
-# --server.address=0.0.0.0 makes app accessible outside container
-# Otherwise it binds only to localhost
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Move configs to standard locations
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Start Supervisord
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
