@@ -65,23 +65,33 @@ pipeline {
     }
 
     post {
-        success {
+success {
             emailext(
-                subject: "SUCCESS: ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
-                body: "Build succeeded: ${env.BUILD_URL}\n\nSee attached build log.",
+                subject: "✅ SUCCESS: ${env.JOB_NAME} [Build #${env.BUILD_NUMBER}]",
+                body: """<h3>Build Succeeded!</h3>
+                         <p><b>Job:</b> ${env.JOB_NAME}</p>
+                         <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                         <p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                         <p>Check the attached logs for deployment details.</p>""",
                 to: "${EMAIL_RECIPIENTS}",
-                attachLog: true
+                attachLog: true,
+                compressLog: true,
+                mimeType: 'text/html'
             )
-            echo 'Application deployed successfully! Email sent.'
         }
         failure {
             emailext(
-                subject: "FAILURE: ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
-                body: "Build failed: ${env.BUILD_URL}\n\nSee attached build log for details.",
+                subject: "❌ FAILURE: ${env.JOB_NAME} [Build #${env.BUILD_NUMBER}]",
+                body: """<h3>Build Failed!</h3>
+                         <p><b>Job:</b> ${env.JOB_NAME}</p>
+                         <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                         <p><b>URL:</b> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                         <p>The build log is attached to help you debug.</p>""",
                 to: "${EMAIL_RECIPIENTS}",
-                attachLog: true
+                attachLog: true,
+                compressLog: true,
+                mimeType: 'text/html'
             )
-            echo 'Pipeline failed! Email sent.'
         }
     }
 }
